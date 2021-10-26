@@ -1,37 +1,33 @@
 #include "processHandler.h"
 
-static process_t background[256];
-static int count;
-static process_t foreground;
-
-void addForeground(process_t process) {
-    foreground = process;
+processHandler_t *createEmptyProcessHandler() {
+    processHandler_t *processHandler = (processHandler_t *) malloc(sizeof(processHandler_t));
+    processHandler->foreground = NULL;
+    processHandler->background = createEmptyList();
+    return processHandler;
 }
 
-char *getForegroundLine() {
-    return foreground.line;
+void cleanProcess(process_t *process) {
+    free(process->line);
+    free(process->pid);
+    free(process);
 }
 
-int getForegroundCount() {
-    return foreground.count;
+void cleanProcessHandler(processHandler_t *processHandler) {
+    //TODO
+    removeForeground(processHandler);
+    free(processHandler);
 }
 
-pid_t *getForegroundPid() {
-    return foreground.pid;
+void addForeground(processHandler_t *processHandler, process_t *process) {
+    processHandler->foreground = process;
 }
 
-int foregroundContainsPid(pid_t pid) {
-    int bool = 0;
-    for (int i = 0; i < foreground.count; ++i) {
-        bool = bool || (foreground.pid[i] == pid);
-    }
-    return bool;
+process_t *getForeground(processHandler_t *processHandler) {
+    return processHandler->foreground;
 }
 
-void removeForeground() {
-    free(foreground.pid);
-    free(foreground.line);
-
-    foreground.line = NULL;
-    foreground.pid = NULL;
+void removeForeground(processHandler_t *processHandler) {
+    cleanProcess(processHandler->foreground);
+    processHandler->foreground = NULL;
 }

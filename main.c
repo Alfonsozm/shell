@@ -6,13 +6,13 @@
 
 #include "parser.h"
 #include "processHandler.h"
-#include "handler.h"
 
 int main(void) {
-    signal(SIGINT, handleSIGINT);
-    signal(SIGQUIT, handleSIGQUIT);
-    signal(SIGUSR1, handleSIGUSR1);
+    signal(SIGINT, SIG_IGN);
+    signal(SIGQUIT, SIG_IGN);
+    signal(SIGSTOP, SIG_IGN);
     char *buf = malloc(sizeof(char) * 1024);
+    processHandler_t *processHandler = createEmptyProcessHandler();
 
     printf("msh > ");
     while (fgets(buf, 1024, stdin)) {
@@ -40,27 +40,24 @@ int main(void) {
                 perror("Error while forking");
                 exit(1);
             } else if (pid[i] == 0) {
-                pause();
+                signal(SIGINT, SIG_DFL);
+                signal(SIGQUIT, SIG_DFL);
+                signal(SIGSTOP, SIG_DFL);
                 execvp(line->commands[i].filename, line->commands[i].argv);
             }
         }
-        process_t process;
-        process.line = buf;
-        process.count = line->ncommands;
-        process.pid = pid;
+        process_t *process = malloc(sizeof(process_t));
+        process->line = buf;
+        process->count = line->ncommands;
+        process->pid = pid;
         if (line->background) {
 
         } else {
-            addForeground(process);
-            sleep(1); //thread synchronization
-            for (int i = 0; i < line->ncommands; ++i) {
-                kill(getForegroundPid()[i], SIGUSR1);
-            }
-
+            addForeground(processHandler, process);
             for (int i = 0; i < line->ncommands; ++i) {
                 waitpid(pid[i], NULL, 0);
             }
-            removeForeground();
+            removeForeground(processHandler);
         }
 
         buf = malloc(sizeof(char) * 1024);
