@@ -21,7 +21,7 @@ int isEmpty(list_t *list) {
     return list->count == 0;
 }
 
-void addInfo(list_t *list, void *info) {
+int addInfo(list_t *list, void *info) {
     node_t *tmp = malloc(sizeof(node_t));
     tmp->info = info;
     if (isEmpty(list)) {
@@ -38,6 +38,7 @@ void addInfo(list_t *list, void *info) {
         tmp->previous = list->last;
         list->last = tmp;
     }
+    return list->totalAdded;
 }
 
 int getCount(list_t *list) {

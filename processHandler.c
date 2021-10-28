@@ -31,3 +31,7 @@ void removeForeground(processHandler_t *processHandler) {
     cleanProcess(processHandler->foreground);
     processHandler->foreground = NULL;
 }
+
+int addBackground(processHandler_t *processHandler, process_t *process){
+    return addInfo(processHandler->background, process);
+}

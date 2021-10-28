@@ -25,7 +25,7 @@ void *getLastInfo(list_t *list);
 
 int isEmpty(list_t *list);
 
-void addInfo(list_t *list, void *info);
+int addInfo(list_t *list, void *info);
 
 int getCount(list_t *list);
 
