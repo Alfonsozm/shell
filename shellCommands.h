@@ -6,10 +6,14 @@
 #include <unistd.h>
 #include <string.h>
 
-int cd(char* dir);
+#include "processHandler.h"
 
-int jobs();
+int cd(char const *dir);
 
-int foreground(int i);
+void jobs(processHandler_t const *processHandler);
+
+void foreground(processHandler_t *processHandler, int i);
+
+void background(processHandler_t *processHandler, int i);
 
 #endif

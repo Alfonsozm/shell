@@ -8,6 +8,7 @@
 
 typedef struct process_t {
     char *line;
+    int id;
     int count;
     pid_t *pid;
 } process_t;
@@ -27,7 +28,7 @@ void cleanProcessHandler(processHandler_t *processHandler);
 
 void addForeground(processHandler_t *processHandler, process_t *process);
 
-process_t *getForeground(processHandler_t *processHandler);
+process_t *getForeground(processHandler_t const *processHandler);
 
 //frees all the memory of the process_t in processHandler.foreground and sets the value to NULL
 void removeForeground(processHandler_t *processHandler);

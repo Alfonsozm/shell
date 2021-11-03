@@ -9,15 +9,15 @@ list_t *createEmptyList() {
     return list;
 }
 
-void *getFirstInfo(list_t *list) {
+void *getFirstInfo(list_t const *list) {
     return list->first->info;
 }
 
-void *getLastInfo(list_t *list) {
+void *getLastInfo(list_t const *list) {
     return list->last->info;
 }
 
-int isEmpty(list_t *list) {
+int isEmpty(list_t const *list) {
     return list->count == 0;
 }
 
@@ -27,13 +27,11 @@ int addInfo(list_t *list, void *info) {
     if (isEmpty(list)) {
         list->count++;
         list->totalAdded++;
-        tmp->id = list->totalAdded;
         list->first = tmp;
         list->last = tmp;
     } else {
         list->count++;
         list->totalAdded++;
-        tmp->id = list->totalAdded;
         list->last->next = tmp;
         tmp->previous = list->last;
         list->last = tmp;
@@ -41,10 +39,22 @@ int addInfo(list_t *list, void *info) {
     return list->totalAdded;
 }
 
-int getCount(list_t *list) {
+int getCount(list_t const *list) {
     return list->count;
 }
 
-int getTotalAdded(list_t *list) {
+int getTotalAdded(list_t const *list) {
     return list->totalAdded;
+}
+
+void *getByIndex(list_t const *list, int index) {
+    if (index >= list->count) {
+        return NULL;
+    } else {
+        node_t *n = list->first;
+        for (int i = 1; i < index; ++i) {
+            n = n->next;
+        }
+        return n;
+    }
 }

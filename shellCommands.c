@@ -1,19 +1,63 @@
 #include "shellCommands.h"
 
-int cd(char *dir){
+int cd(char const *dir) {
     int check;
-    if(*dir == NULL) {
+    if (dir == NULL) {
         check = chdir(getenv("HOME"));
     } else {
-        check = chdir(*dir);
+        check = chdir(dir);
     }
 
-    if(check==0){
-        char s[100];
-        fprintf(stdout,"Actual directory: %s %s", getenv("PWD"), getcwd(s,100));
+    if (check == 0) {
         return 0;
-    }else{
+    } else {
         fprintf(stderr, "Incorrect directory name\n");
         return -1;
+    }
+}
+
+void jobs(processHandler_t const *processHandler) {
+    fprintf(stdout, "Id     \tStatus  \tProgram\n");
+    node_t *n = processHandler->background->first;
+    while (n != NULL) {
+        process_t *p = (process_t *) n->info;
+        fprintf(stdout,"%-4d \t%7s \t%s",p->id,"Running",p->line); //TODO
+        n = n->next;
+    }
+}
+
+void foreground(processHandler_t *processHandler, int i) {
+    process_t const *p = NULL;
+    node_t *n = processHandler->background->first;
+    while (n != NULL) {
+        if (((process_t *) n->info)->id == i) {
+            p = (process_t *) n->info;
+            break;
+        }
+        n = n->next;
+    }
+
+    if (p == NULL) {
+        fprintf(stderr, "There is no job with %d id", i);
+    } else {
+        //TODO
+    }
+}
+
+void background(processHandler_t *processHandler, int i) {
+    process_t const *p = NULL;
+    node_t *n = processHandler->background->first;
+    while (n != NULL) {
+        if (((process_t *) n->info)->id == i) {
+            p = (process_t *) n->info;
+            break;
+        }
+        n = n->next;
+    }
+
+    if (p == NULL) {
+        fprintf(stderr, "There is no job with %d id", i);
+    } else {
+        //TODO
     }
 }
