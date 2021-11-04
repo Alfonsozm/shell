@@ -1,25 +1,0 @@
-
-9c:CommentedCode‡"Remove the commented out code.(Ñâ—
-:c:CommentedCode‹"Remove the commented out code.(Ï”—ó
-?c:CommentedCodeé"Remove the commented out code.(ïÀ‘”úÿÿÿÿ
-?c:CommentedCode¬"Remove the commented out code.(Â³ŽÀùÿÿÿÿ
-bc:S995"PMake this parameter a pointer-to-const. The current type of "start" is "char *".(õì®Á
-`c:S995"NMake this parameter a pointer-to-const. The current type of "end" is "char *".(õì®Á
-Ac:S59556")Declare the variable "i" inside the loop.(ð­µÚüÿÿÿÿ
-<c:S5955:")Declare the variable "j" inside the loop.(Ã¹·‚
-^c:S134;"MRefactor this code to not nest more than 3 if|for|do|while|switch statements.(«¿‚
-`c:SingleDeclarationPerStatement*"0Define each identifier in a dedicated statement.(¦¢Éëùÿÿÿÿ
-lc:S3776e"TRefactor this function to reduce its Cognitive Complexity from 32 to the 25 allowed.(…••þÿÿÿÿ
-<c:S5955i")Declare the variable "i" inside the loop.(–üð¸
-Zc:SingleDeclarationPerStatementg"0Define each identifier in a dedicated statement.(³Äúr
-9c:S1110k"!Remove these useless parentheses.(ŸÜ‚úÿÿÿÿ
-3c:S1110q"!Remove these useless parentheses.(ÀßÄ
-9c:S1110v"!Remove these useless parentheses.(ÕñÞÇþÿÿÿÿ
-:c:S1110‚"!Remove these useless parentheses.(ÐýÈ»ÿÿÿÿÿ
-:c:S1110‚"!Remove these useless parentheses.(ÐýÈ»ÿÿÿÿÿ
-ac:S995“"NMake this parameter a pointer-to-const. The current type of "cmd" is "char *".(¹¿‡Ý
-rc:S5350–"YMake the type of this variable a pointer-to-const. The current type of "str" is "char *".(Õö–Úùÿÿÿÿ
-mc:S3776º"TRefactor this function to reduce its Cognitive Complexity from 47 to the 25 allowed.(§ªª¹úÿÿÿÿ
-Jc:S886Ð"2Refactor this loop so that it is less error-prone.(Ú›º¸øÿÿÿÿ
-Jc:S886Ý"2Refactor this loop so that it is less error-prone.(Ú›º¸øÿÿÿÿ
-Ec:S886ø"2Refactor this loop so that it is less error-prone.(–üð¸
