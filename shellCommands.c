@@ -21,7 +21,7 @@ void jobs(processHandler_t const *processHandler) {
     node_t *n = processHandler->background->first;
     while (n != NULL) {
         process_t *p = (process_t *) n->info;
-        fprintf(stdout,"%-4d \t%7s \t%s",p->id,"Running",p->line); //TODO
+        fprintf(stdout,"[%d] \t%7s \t%s",p->id,"Running",p->line); //TODO
         n = n->next;
     }
 }
@@ -29,10 +29,9 @@ void jobs(processHandler_t const *processHandler) {
 void foreground(processHandler_t *processHandler, int i) {
     process_t const *p = NULL;
     node_t *n = processHandler->background->first;
-    while (n != NULL) {
+    while (n != NULL && p ==NULL) {
         if (((process_t *) n->info)->id == i) {
             p = (process_t *) n->info;
-            break;
         }
         n = n->next;
     }
@@ -40,7 +39,12 @@ void foreground(processHandler_t *processHandler, int i) {
     if (p == NULL) {
         fprintf(stderr, "There is no job with %d id", i);
     } else {
-        //TODO
+        for (int j = 0; j < p->count; ++j) {
+            kill(p->pid[j], SIGUSR1);
+        }
+        for (int j = 0; j < p->count; ++j) {
+            kill(p->pid[j], SIGCONT);
+        }
     }
 }
 

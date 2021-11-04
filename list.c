@@ -5,7 +5,6 @@ list_t *createEmptyList() {
     list->first = NULL;
     list->last = NULL;
     list->count = 0;
-    list->totalAdded = 0;
     return list;
 }
 
@@ -21,30 +20,25 @@ int isEmpty(list_t const *list) {
     return list->count == 0;
 }
 
-int addInfo(list_t *list, void *info) {
+void addInfo(list_t *list, void *info) {
     node_t *tmp = malloc(sizeof(node_t));
     tmp->info = info;
+    tmp->previous = NULL;
+    tmp->next = NULL;
     if (isEmpty(list)) {
         list->count++;
-        list->totalAdded++;
         list->first = tmp;
         list->last = tmp;
     } else {
         list->count++;
-        list->totalAdded++;
         list->last->next = tmp;
         tmp->previous = list->last;
         list->last = tmp;
     }
-    return list->totalAdded;
 }
 
 int getCount(list_t const *list) {
     return list->count;
-}
-
-int getTotalAdded(list_t const *list) {
-    return list->totalAdded;
 }
 
 void *getByIndex(list_t const *list, int index) {

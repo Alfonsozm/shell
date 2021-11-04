@@ -15,10 +15,13 @@ typedef struct process_t {
 
 typedef struct processHandler_t {
     struct list_t *background;
+    int totalBackgroundProcessesAdded;
     struct process_t *foreground;
 } processHandler_t;
 
 processHandler_t *createEmptyProcessHandler();
+
+process_t *createNewProcess(char *line, int id, int count, pid_t *pid);
 
 //frees all the memory associated with the specified process_t
 void cleanProcess(process_t *process);
@@ -34,5 +37,7 @@ process_t *getForeground(processHandler_t const *processHandler);
 void removeForeground(processHandler_t *processHandler);
 
 int addBackground(processHandler_t *processHandler, process_t *process);
+
+list_t *getBackground(processHandler_t const *processHandler);
 
 #endif

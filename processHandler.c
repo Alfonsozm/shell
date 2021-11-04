@@ -3,8 +3,18 @@
 processHandler_t *createEmptyProcessHandler() {
     processHandler_t *processHandler = (processHandler_t *) malloc(sizeof(processHandler_t));
     processHandler->foreground = NULL;
+    processHandler->totalBackgroundProcessesAdded = 0;
     processHandler->background = createEmptyList();
     return processHandler;
+}
+
+process_t *createNewProcess(char *line, int id, int count, pid_t *pid) {
+    process_t *p = (process_t *) malloc(sizeof(process_t));
+    p->line = line;
+    p->id = id;
+    p->count = count;
+    p->pid = pid;
+    return p;
 }
 
 void cleanProcess(process_t *process) {
@@ -16,9 +26,9 @@ void cleanProcess(process_t *process) {
 void cleanProcessHandler(processHandler_t *processHandler) {
     node_t *n = processHandler->background->first;
     while (n != NULL) {
+        free(n->previous);
         cleanProcess((process_t *) n->info);
         n = n->next;
-        free(n->previous);
     }
     free(processHandler->background);
     removeForeground(processHandler);
@@ -41,9 +51,14 @@ void removeForeground(processHandler_t *processHandler) {
 }
 
 int addBackground(processHandler_t *processHandler, process_t *process) {
-    int i = addInfo(processHandler->background, process);
+    addInfo(processHandler->background, process);
     if (process->id == -1) {
-        process->id = i;
+        processHandler->totalBackgroundProcessesAdded++;
+        process->id = processHandler->totalBackgroundProcessesAdded;
     }
-    return i;
+    return processHandler->totalBackgroundProcessesAdded;
+}
+
+list_t *getBackground(processHandler_t const *processHandler) {
+    return processHandler->background;
 }

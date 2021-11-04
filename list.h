@@ -13,7 +13,6 @@ typedef struct list_t {
     node_t *first;
     node_t *last;
     int count;
-    int totalAdded;
 } list_t;
 
 list_t *createEmptyList();
@@ -24,11 +23,9 @@ void *getLastInfo(list_t const *list);
 
 int isEmpty(list_t const *list);
 
-int addInfo(list_t *list, void *info);
+void addInfo(list_t *list, void *info);
 
 int getCount(list_t const *list);
-
-int getTotalAdded(list_t const *list);
 
 void *getByIndex(list_t const *list, int i);
 
