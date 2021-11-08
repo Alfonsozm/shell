@@ -19,32 +19,48 @@ int cd(char const *dir) {
 void jobs(processHandler_t const *processHandler) {
     fprintf(stdout, "Id     \tStatus  \tProgram\n");
     node_t *n = processHandler->background->first;
+
     while (n != NULL) {
         process_t *p = (process_t *) n->info;
-        fprintf(stdout,"[%d] \t%7s \t%s",p->id,"Running",p->line); //TODO
+        checkProcessStatus(p);
+        char *c;
+        if (p->groupStatus == RUNNING) {
+            c = "Running";
+        } else if (p->groupStatus == STOPPED) {
+            c = "Stopped";
+        } else {
+            c = "Ended";
+        }
+        fprintf(stdout, "[%d] \t%7s \t%s\n", p->jobId, c, p->line);
         n = n->next;
     }
 }
 
 void foreground(processHandler_t *processHandler, int i) {
-    process_t const *p = NULL;
+    process_t *p = NULL;
     node_t *n = processHandler->background->first;
-    while (n != NULL && p ==NULL) {
-        if (((process_t *) n->info)->id == i) {
+    while (n != NULL && p == NULL) {
+        if (((process_t *) n->info)->jobId == i) {
             p = (process_t *) n->info;
         }
         n = n->next;
     }
 
     if (p == NULL) {
-        fprintf(stderr, "There is no job with %d id", i);
+        fprintf(stderr, "There is no job with %d jobId", i);
+    } else if (p->groupStatus == ENDED) {
+        fprintf(stderr, "The job with jobId %d has already ended", i);
     } else {
+        //killpg(p->groupPid, SIGUSR1);
+        killpg(p->groupPid, SIGCONT);
         for (int j = 0; j < p->count; ++j) {
-            kill(p->pid[j], SIGUSR1);
+            if (p->pidStatus[j] != ENDED) {
+                p->pidStatus[j] = RUNNING;
+            }
         }
-        for (int j = 0; j < p->count; ++j) {
-            kill(p->pid[j], SIGCONT);
-        }
+        p->groupStatus = RUNNING;
+        removeBackground(processHandler,p->jobId);
+        addForeground(processHandler,p);
     }
 }
 
@@ -52,7 +68,7 @@ void background(processHandler_t *processHandler, int i) {
     process_t const *p = NULL;
     node_t *n = processHandler->background->first;
     while (n != NULL) {
-        if (((process_t *) n->info)->id == i) {
+        if (((process_t *) n->info)->jobId == i) {
             p = (process_t *) n->info;
             break;
         }
@@ -60,7 +76,7 @@ void background(processHandler_t *processHandler, int i) {
     }
 
     if (p == NULL) {
-        fprintf(stderr, "There is no job with %d id", i);
+        fprintf(stderr, "There is no job with %d jobId", i);
     } else {
         //TODO
     }

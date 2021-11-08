@@ -15,23 +15,23 @@ int stdoutBACKUP;
 int stderrBACKUP;
 int devNULL;
 processHandler_t *processHandler;
-int hasRedirections[3];
 
 //if any stream is -2 no redirection is made, if inputStream is -3 stdin is closed
-pid_t createNewProcessLine(tcommand command, int inputStream, int outputStream, int errorStream);
+pid_t createNewProcessLine(tcommand command, int inputStream, int outputStream, int errorStream, pid_t groupPid);
 
 void sigtstpHandler(int sig);
 
 void sigusr1Handler(int sig);
 
+void sigusr2Handler(int sig);
+
 void foregroundSignalHandler(int sig);
 
 int main(void) {
-    stdinBACKUP = dup(fileno(stdin));
-    stdoutBACKUP = dup(fileno(stdout));
-    stderrBACKUP = dup(fileno(stderr));
+    stdinBACKUP = dup(STDIN_FILENO);
+    stdoutBACKUP = dup(STDOUT_FILENO);
+    stderrBACKUP = dup(STDERR_FILENO);
     devNULL = open("/dev/null", O_WRONLY);
-    printf("%d %d %d %d", stdinBACKUP, stdoutBACKUP, stderrBACKUP, devNULL);
     signal(SIGINT, foregroundSignalHandler);
     signal(SIGQUIT, foregroundSignalHandler);
     signal(SIGTSTP, sigtstpHandler);
@@ -42,7 +42,6 @@ int main(void) {
     getcwd(cwd, 1024);
     printf("msh (%s) > ", cwd);
     while (fgets(buf, 1024, stdin)) {
-        hasRedirections[0] = hasRedirections[1] = hasRedirections[2] = 0;
         int check = 0; //whether a command is executed or not (if false a command is executed)
         tline const *line = tokenize(buf);
         if (line == NULL || line->ncommands <= 0) {
@@ -50,41 +49,39 @@ int main(void) {
             printf("msh (%s) > ", cwd);
             continue;
         }
-
         int inputStream = -2;
         int outputStream = -2;
         int errorStream = -2;
         if (line->redirect_input != NULL) {
             inputStream = open(line->redirect_input, O_RDONLY);
-            hasRedirections[0] = 1;
         }
         if (line->redirect_output != NULL) {
             outputStream = open(line->redirect_output, O_WRONLY | O_CREAT | O_TRUNC,
                                 S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
-            hasRedirections[1] = 1;
         }
         if (line->redirect_error != NULL) {
             errorStream = open(line->redirect_error, O_WRONLY | O_CREAT | O_TRUNC,
                                S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
-            hasRedirections[2] = 1;
+
         }
-        if(inputStream == -1 || outputStream == -1 || errorStream == -1){
-            fprintf(stderr, "There has been a problem when opening the files to redirect input or output, check the filenames and try again\n");
+        if (inputStream == -1 || outputStream == -1 || errorStream == -1) {
+            fprintf(stderr,
+                    "There has been a problem when opening the files to redirect input or output, check the filenames and try again\n");
             fflush(stderr);
-            hasRedirections[0] = hasRedirections[1] = hasRedirections[2] = 0;
             printf("msh (%s) > ", cwd);
             continue;
         }
         pid_t *pid = malloc(sizeof(pid_t) * line->ncommands);
         if (line->ncommands == 1) {
             if (line->commands[0].filename == NULL) {
+                check = 1;
                 if (!strcmp(line->commands[0].argv[0], "exit")) {
                     if (line->commands[0].argc == 1) {
                         node_t *n = getBackground(processHandler)->first;
                         while (n != NULL) {
                             process_t const *p = (process_t *) n->info;
-                            for (int i = 0; i < p->count; ++i) {
-                                kill(p->pid[i], SIGTERM); //TODO check whether a process has already died
+                            if(p->groupStatus != ENDED){
+                                killpg(p->groupPid, SIGTERM);
                             }
                             n = n->next;
                         }
@@ -127,11 +124,11 @@ int main(void) {
             } else if (line->background) {
                 pid[0] = createNewProcessLine(line->commands[0], inputStream == -2 ? -3 : inputStream,
                                               outputStream == -2 ? devNULL : outputStream,
-                                              errorStream == -2 ? devNULL : errorStream);
+                                              errorStream == -2 ? devNULL : errorStream, 0);
             } else {
                 pid[0] = createNewProcessLine(line->commands[0], inputStream,
                                               outputStream,
-                                              errorStream);
+                                              errorStream, 0);
             }
         } else {
             for (int i = 0; i < line->ncommands; ++i) {
@@ -146,52 +143,52 @@ int main(void) {
                     while (pipe(pipeline) == -1);
                     pid[0] = createNewProcessLine(line->commands[0], inputStream == -2 ? -3 : inputStream,
                                                   pipeline[1],
-                                                  errorStream == -2 ? devNULL : errorStream);
+                                                  errorStream == -2 ? devNULL : errorStream, 0);
                     close(pipeline[1]);
                     int aux;
                     for (int i = 1; i < line->ncommands - 1; ++i) {
                         aux = pipeline[0];
                         pipe(pipeline);
                         pid[i] = createNewProcessLine(line->commands[i], aux, pipeline[1],
-                                                      errorStream == -2 ? devNULL : errorStream);
+                                                      errorStream == -2 ? devNULL : errorStream, pid[0]);
                         close(aux);
                         close(pipeline[1]);
                     }
                     pid[line->ncommands - 1] = createNewProcessLine(line->commands[line->ncommands - 1], pipeline[0],
                                                                     outputStream == -2 ? devNULL : outputStream,
-                                                                    errorStream == -2 ? devNULL : errorStream);
+                                                                    errorStream == -2 ? devNULL : errorStream, pid[0]);
                     close(pipeline[0]);
                 } else {
                     while (pipe(pipeline) == -1);
                     pid[0] = createNewProcessLine(line->commands[0], inputStream,
                                                   pipeline[1],
-                                                  errorStream);
+                                                  errorStream, 0);
                     close(pipeline[1]);
                     int aux;
                     for (int i = 1; i < line->ncommands - 1; ++i) {
                         aux = pipeline[0];
                         pipe(pipeline);
                         pid[i] = createNewProcessLine(line->commands[i], aux, pipeline[1],
-                                                      errorStream);
+                                                      errorStream, pid[0]);
                         close(aux);
                         close(pipeline[1]);
                     }
                     pid[line->ncommands - 1] = createNewProcessLine(line->commands[line->ncommands - 1], pipeline[0],
                                                                     outputStream,
-                                                                    errorStream);
+                                                                    errorStream, pid[0]);
                     close(pipeline[0]);
                 }
             }
         }
 
         if (!check) {
-            process_t *process = createNewProcess(buf,-1,line->ncommands,pid);
+            process_t *process = createNewProcess(buf, -1, line->ncommands, pid);
             if (line->background) {
                 addBackground(processHandler, process);
             } else {
                 addForeground(processHandler, process);
-                for (int i = 0; i < line->ncommands; ++i) {
-                    waitpid(pid[i], NULL, 0);
+                while (process->groupStatus == RUNNING){
+                    checkProcessStatus(process);
                 }
                 removeForeground(processHandler);
             }
@@ -212,27 +209,28 @@ int main(void) {
     return 0;
 }
 
-pid_t createNewProcessLine(tcommand command, int inputStream, int outputStream, int errorStream) {
+pid_t createNewProcessLine(tcommand command, int inputStream, int outputStream, int errorStream, pid_t groupPid) {
     pid_t pid = fork();
     if (pid < 0) {
         fprintf(stderr, "Error while forking\n");
         exit(1);
     } else if (pid == 0) {
+        setpgid(0, groupPid);
         signal(SIGINT, SIG_DFL);
         signal(SIGQUIT, SIG_DFL);
-        signal(SIGUSR1, sigusr1Handler);
+        signal(SIGTSTP, SIG_DFL);
         if (inputStream != -2) {
             if (inputStream == -3) {
-                close(fileno(stdin));
+                close(STDIN_FILENO);
             } else {
-                dup2(inputStream, fileno(stdin));
+                dup2(inputStream, STDIN_FILENO);
             }
         }
         if (outputStream != -2) {
-            dup2(outputStream, fileno(stdout));
+            dup2(outputStream, STDOUT_FILENO);
         }
         if (errorStream != -2) {
-            dup2(errorStream, fileno(stderr));
+            dup2(errorStream, STDERR_FILENO);
         }
         execvp(command.filename, command.argv);
         exit(-1);
@@ -243,33 +241,25 @@ pid_t createNewProcessLine(tcommand command, int inputStream, int outputStream, 
 void sigtstpHandler(int sig) {
     process_t *p = getForeground(processHandler);
     if (p != NULL) {
-        for (int i = 0; i < p->count; ++i) {
-            kill(p->pid[i], SIGSTOP);
-        }
+        killpg(p->groupPid, SIGSTOP);
         processHandler->foreground = NULL;
+        p->groupStatus = STOPPED;
         int i = addBackground(processHandler, p);
-        fprintf(stdout, "Sent to background with job id: %d",i);
+        fprintf(stdout, "Sent to background with job jobId: %d\n", i);
     }
 }
 
 void sigusr1Handler(int sig) {
-    if (!hasRedirections[0]) {
-        stdinBACKUP = dup2(stdinBACKUP, 0);
-    }
-    if (!hasRedirections[1]) {
-        stdoutBACKUP = dup2(stdoutBACKUP, 1);
-    }
-    if (!hasRedirections[2]) {
-        stderrBACKUP = dup2(stderrBACKUP, 2);
-    }
+
 }
 
-void foregroundSignalHandler(int sig){
-    process_t *p = getForeground(processHandler);
+void sigusr2Handler(int sig) {
+
+}
+
+void foregroundSignalHandler(int sig) {
+    process_t const *p = getForeground(processHandler);
     if (p != NULL) {
-        for (int i = 0; i < p->count; ++i) {
-            kill(p->pid[i], sig);
-        }
-        removeForeground(processHandler);
+        killpg(p->groupPid, sig);
     }
 }
