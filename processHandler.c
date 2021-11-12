@@ -8,7 +8,7 @@ processHandler_t *createEmptyProcessHandler() {
     return processHandler;
 }
 
-process_t *createNewProcess(char *line, int id, int count, pid_t *pid) {
+process_t *createNewProcess(char *line, int id, int count, pid_t *pid, pid_t *ioHandler, int *hasRedirection) {
     process_t *p = (process_t *) malloc(sizeof(process_t));
     p->line = line;
     p->jobId = id;
@@ -17,6 +17,8 @@ process_t *createNewProcess(char *line, int id, int count, pid_t *pid) {
     p->groupPid = pid[0];
     p->groupStatus = RUNNING;
     p->pidStatus = malloc(sizeof(status_t) * count);
+    p->ioHandlers = ioHandler;
+    p->hasRedirection = hasRedirection;
     for (int i = 0; i < count; ++i) {
         p->pidStatus[i] = RUNNING;
     }
@@ -45,6 +47,7 @@ void cleanProcess(process_t *process) {
     free(process->line);
     free(process->pid);
     free(process->pidStatus);
+    free(process->ioHandlers);
     free(process);
 }
 
@@ -87,25 +90,25 @@ int addBackground(processHandler_t *processHandler, process_t *process) {
 process_t *removeBackground(processHandler_t *processHandler, int jobId) {
     node_t *n = processHandler->background->first;
     process_t *p = NULL;
-    if(n!=NULL && ((process_t*)n->info)->jobId == jobId){
-        p = (process_t*) n->info;
+    if (n != NULL && ((process_t *) n->info)->jobId == jobId) {
+        p = (process_t *) n->info;
     }
-    while (n != NULL && p == NULL){
+    while (n != NULL && p == NULL) {
         n = n->next;
-        if(((process_t*)n->info)->jobId == jobId){
-            p = (process_t*) n->info;
+        if (((process_t *) n->info)->jobId == jobId) {
+            p = (process_t *) n->info;
         }
     }
 
-    if(p!=NULL){
+    if (p != NULL) {
         node_t *previous = n->previous;
         node_t *next = n->next;
-        if(previous != NULL){
+        if (previous != NULL) {
             previous->next = next;
         } else {
             processHandler->background->first = next;
         }
-        if(next != NULL){
+        if (next != NULL) {
             next->previous = previous;
         } else {
             processHandler->background->last = previous;
@@ -118,4 +121,16 @@ process_t *removeBackground(processHandler_t *processHandler, int jobId) {
 
 list_t *getBackground(processHandler_t const *processHandler) {
     return processHandler->background;
+}
+
+process_t *getBackgroundByJobId(processHandler_t const *processHandler, int jobId) {
+    process_t *p = NULL;
+    node_t *n = processHandler->background->first;
+    while (n != NULL && p == NULL) {
+        if (((process_t *) n->info)->jobId == jobId) {
+            p = (process_t *) n->info;
+        }
+        n = n->next;
+    }
+    return p;
 }

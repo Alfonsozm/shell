@@ -13,8 +13,8 @@ int cd(char const *dir);
 
 void jobs(processHandler_t const *processHandler);
 
-void foreground(processHandler_t *processHandler, int i);
+void foreground(processHandler_t *processHandler, int jobId);
 
-void background(processHandler_t *processHandler, int i);
+void background(processHandler_t *processHandler, int jobId);
 
 #endif

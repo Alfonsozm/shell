@@ -36,48 +36,57 @@ void jobs(processHandler_t const *processHandler) {
     }
 }
 
-void foreground(processHandler_t *processHandler, int i) {
-    process_t *p = NULL;
-    node_t *n = processHandler->background->first;
-    while (n != NULL && p == NULL) {
-        if (((process_t *) n->info)->jobId == i) {
-            p = (process_t *) n->info;
-        }
-        n = n->next;
-    }
+void foreground(processHandler_t *processHandler, int jobId) {
+    process_t *p = getBackgroundByJobId(processHandler, jobId);
 
     if (p == NULL) {
-        fprintf(stderr, "There is no job with %d jobId", i);
+        fprintf(stderr, "There is no job with %d jobId", jobId);
     } else if (p->groupStatus == ENDED) {
-        fprintf(stderr, "The job with jobId %d has already ended", i);
+        fprintf(stderr, "The job with jobId %d has already ended", jobId);
     } else {
-        //killpg(p->groupPid, SIGUSR1);
         killpg(p->groupPid, SIGCONT);
+        for (int i = 0; i < 3; ++i) {
+            if (!p->hasRedirection[i]) {
+                kill(p->ioHandlers[i], SIGUSR1);
+            }
+        }
         for (int j = 0; j < p->count; ++j) {
             if (p->pidStatus[j] != ENDED) {
                 p->pidStatus[j] = RUNNING;
             }
         }
         p->groupStatus = RUNNING;
-        removeBackground(processHandler,p->jobId);
-        addForeground(processHandler,p);
+        removeBackground(processHandler, p->jobId);
+        addForeground(processHandler, p);
+        while (p->groupStatus == RUNNING) {
+            checkProcessStatus(p);
+        }
+        if (p->groupStatus == ENDED) {
+            killpg(p->groupPid, SIGTERM);
+        }
+        removeForeground(processHandler);
     }
 }
 
-void background(processHandler_t *processHandler, int i) {
-    process_t const *p = NULL;
-    node_t *n = processHandler->background->first;
-    while (n != NULL) {
-        if (((process_t *) n->info)->jobId == i) {
-            p = (process_t *) n->info;
-            break;
-        }
-        n = n->next;
-    }
+void background(processHandler_t *processHandler, int jobId) {
+    process_t *p = getBackgroundByJobId(processHandler, jobId);
 
     if (p == NULL) {
-        fprintf(stderr, "There is no job with %d jobId", i);
+        fprintf(stderr, "There is no job with %d jobId", jobId);
+    } else if (p->groupStatus == ENDED) {
+        fprintf(stderr, "The job with jobId %d has already ended", jobId);
     } else {
-        //TODO
+        killpg(p->groupPid, SIGCONT);
+        for (int i = 0; i < 3; ++i) {
+            if (!p->hasRedirection[i]) {
+                kill(p->ioHandlers[i], SIGUSR2);
+            }
+        }
+        for (int j = 0; j < p->count; ++j) {
+            if (p->pidStatus[j] != ENDED) {
+                p->pidStatus[j] = RUNNING;
+            }
+        }
+        p->groupStatus = RUNNING;
     }
 }

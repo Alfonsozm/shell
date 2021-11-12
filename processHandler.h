@@ -22,6 +22,8 @@ typedef struct process_t {
     status_t *pidStatus;
     pid_t groupPid;
     status_t groupStatus;
+    pid_t *ioHandlers;
+    int *hasRedirection;
 } process_t;
 
 typedef struct processHandler_t {
@@ -32,7 +34,7 @@ typedef struct processHandler_t {
 
 processHandler_t *createEmptyProcessHandler();
 
-process_t *createNewProcess(char *line, int id, int count, pid_t *pid);
+process_t *createNewProcess(char *line, int id, int count, pid_t *pid, pid_t *ioHandler, int *hasRedirection);
 
 void checkProcessStatus(process_t *p);
 
@@ -54,5 +56,7 @@ int addBackground(processHandler_t *processHandler, process_t *process);
 process_t *removeBackground(processHandler_t *processHandler, int jobId);
 
 list_t *getBackground(processHandler_t const *processHandler);
+
+process_t *getBackgroundByJobId(processHandler_t const *processHandler, int jobId);
 
 #endif
