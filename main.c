@@ -104,7 +104,9 @@ int main(void) {
                     }
                 } else if (!strcmp(line->commands[0].argv[0], "fg") ||
                            !strcmp(line->commands[0].argv[0], "foreground")) {
-                    if (line->commands[0].argc == 2) {
+                    if (line->commands[0].argc == 1) {
+                        foreground(processHandler, 0);
+                    }else if (line->commands[0].argc == 2) {
                         foreground(processHandler, (int) strtol(line->commands[0].argv[1], NULL, 10));
                     } else {
                         fprintf(stderr, "Incorrect number of arguments for command \"%s\"\n",
@@ -112,7 +114,9 @@ int main(void) {
                     }
                 } else if (!strcmp(line->commands[0].argv[0], "bg") ||
                            !strcmp(line->commands[0].argv[0], "background")) {
-                    if (line->commands[0].argc == 2) {
+                    if (line->commands[0].argc == 1) {
+                        background(processHandler, 0);
+                    }else if (line->commands[0].argc == 2) {
                         background(processHandler, (int) strtol(line->commands[0].argv[1], NULL, 10));
                     } else {
                         fprintf(stderr, "Incorrect number of arguments for command \"%s\"\n",
@@ -141,7 +145,6 @@ int main(void) {
                 pid[0] = createNewProcessLine(line->commands[0], ioPipe[0][0],
                                               ioPipe[1][1],
                                               ioPipe[2][1], 0);
-                sleep(1);
                 for (int i = 0; i < 3; ++i) {
                     while (setpgid(ioHandler[i], pid[0]) == -1);
                 }

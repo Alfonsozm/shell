@@ -37,7 +37,11 @@ void jobs(processHandler_t const *processHandler) {
 }
 
 void foreground(processHandler_t *processHandler, int jobId) {
-    process_t *p = getBackgroundByJobId(processHandler, jobId);
+    if(jobId == 0){
+        process_t const *aux = processHandler->background->last->info;
+        jobId = aux->jobId;
+    }
+    process_t *p = removeBackground(processHandler, jobId);
 
     if (p == NULL) {
         fprintf(stderr, "There is no job with %d jobId", jobId);
@@ -56,7 +60,6 @@ void foreground(processHandler_t *processHandler, int jobId) {
             }
         }
         p->groupStatus = RUNNING;
-        removeBackground(processHandler, p->jobId);
         addForeground(processHandler, p);
         while (p->groupStatus == RUNNING) {
             checkProcessStatus(p);
@@ -69,7 +72,12 @@ void foreground(processHandler_t *processHandler, int jobId) {
 }
 
 void background(processHandler_t *processHandler, int jobId) {
-    process_t *p = getBackgroundByJobId(processHandler, jobId);
+    if(jobId == 0){
+        process_t const *aux = processHandler->background->last->info;
+        jobId = aux->jobId;
+    }
+    process_t *p = removeBackground(processHandler, jobId);
+    addBackground(processHandler,p);
 
     if (p == NULL) {
         fprintf(stderr, "There is no job with %d jobId", jobId);
