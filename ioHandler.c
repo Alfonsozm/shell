@@ -67,6 +67,7 @@ pid_t createNewIOHandlerOFF(int pipeIn, int pipeOut, io_t io) {
 }
 
 void sigusr1Handler(int sig) {
+    write(STDERR_FILENO, "SIGUSR1 handled\n",17);
     switch (ioType) {
         case IN:
             status = ON;
@@ -83,6 +84,7 @@ void sigusr1Handler(int sig) {
 }
 
 void sigusr2Handler(int sig) {
+    write(STDERR_FILENO, "SIGUSR2 handled\n",17);
     switch (ioType) {
         case IN:
             status = OFF;
