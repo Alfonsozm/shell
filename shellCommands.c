@@ -65,6 +65,7 @@ void foreground(processHandler_t *processHandler, int jobId) {
             checkProcessStatus(p);
         }
         if (p->groupStatus == ENDED) {
+            sleep(1);
             killpg(p->groupPid, SIGTERM);
         }
         removeForeground(processHandler);
@@ -90,6 +91,7 @@ void background(processHandler_t *processHandler, int jobId) {
                 kill(p->ioHandlers[i], SIGUSR2);
             }
         }
+        killpg(p->groupPid, SIGCONT);
         for (int j = 0; j < p->count; ++j) {
             if (p->pidStatus[j] != ENDED) {
                 p->pidStatus[j] = RUNNING;

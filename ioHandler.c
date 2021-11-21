@@ -18,6 +18,7 @@ pid_t createNewIOHandler(int pipeIn, int pipeOut, io_t io) {
         signal(SIGINT, SIG_DFL);
         signal(SIGQUIT, SIG_DFL);
         signal(SIGTSTP, SIG_DFL);
+        signal(SIGTERM, SIG_DFL);
         signal(SIGUSR1, sigusr1Handler);
         signal(SIGUSR2, sigusr2Handler);
         dup2(pipeIn, STDIN_FILENO);
@@ -30,6 +31,7 @@ pid_t createNewIOHandler(int pipeIn, int pipeOut, io_t io) {
             }
         }
     }
+    fprintf(stderr, "IOHandler %d %d\n", io, pid);
     return pid;
 }
 
@@ -47,6 +49,7 @@ pid_t createNewIOHandlerOFF(int pipeIn, int pipeOut, io_t io) {
         signal(SIGINT, SIG_DFL);
         signal(SIGQUIT, SIG_DFL);
         signal(SIGTSTP, SIG_DFL);
+        signal(SIGTERM, SIG_DFL);
         signal(SIGUSR1, sigusr1Handler);
         signal(SIGUSR2, sigusr2Handler);
         dup2(pipeIn, STDIN_FILENO);
@@ -59,6 +62,8 @@ pid_t createNewIOHandlerOFF(int pipeIn, int pipeOut, io_t io) {
             }
         }
     }
+    fprintf(stderr, "IOHandler %d %d\n", io, pid);
+    return pid;
 }
 
 void sigusr1Handler(int sig) {
