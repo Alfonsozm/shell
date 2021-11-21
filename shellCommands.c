@@ -1,5 +1,59 @@
 #include "shellCommands.h"
 
+void shellCommand(processHandler_t *processHandler, tcommand *command, char* cwd){
+    if (!strcmp(command->argv[0], "exit")) {
+        if (command->argc == 1) {
+            node_t *n = getBackground(processHandler)->first;
+            while (n != NULL) {
+                process_t const *p = (process_t *) n->info;
+                if (p->groupStatus != ENDED) {
+                    killpg(p->groupPid, SIGTERM);
+                }
+                n = n->next;
+            }
+            cleanProcessHandler_T(processHandler);
+            exit(0);
+        } else {
+            fprintf(stderr, "Incorrect number of arguments for command \"exit\"\n");
+        }
+    } else if (!strcmp(command->argv[0], "cd")) {
+        if (command->argc <= 2) {
+            cd(command->argv[1]);
+            getcwd(cwd, 1024);
+        } else {
+            fprintf(stderr, "Incorrect number of arguments for command \"cd\"\n");
+        }
+    } else if (!strcmp(command->argv[0], "fg") ||
+               !strcmp(command->argv[0], "foreground")) {
+        if (command->argc == 1) {
+            foreground(processHandler, 0);
+        } else if (command->argc == 2) {
+            foreground(processHandler, (int) strtol(command->argv[1], NULL, 10));
+        } else {
+            fprintf(stderr, "Incorrect number of arguments for command \"%s\"\n",
+                    command->argv[0]);
+        }
+    } else if (!strcmp(command->argv[0], "bg") ||
+               !strcmp(command->argv[0], "background")) {
+        if (command->argc == 1) {
+            background(processHandler, 0);
+        } else if (command->argc == 2) {
+            background(processHandler, (int) strtol(command->argv[1], NULL, 10));
+        } else {
+            fprintf(stderr, "Incorrect number of arguments for command \"%s\"\n",
+                    command->argv[0]);
+        }
+    } else if (!strcmp(command->argv[0], "jobs")) {
+        if (command->argc == 1) {
+            jobs(processHandler);
+        } else {
+            fprintf(stderr, "Incorrect number of arguments for command \"jobs\"\n");
+        }
+    } else {
+        fprintf(stderr, "Command \"%s\" does not exist\n", command->argv[0]);
+    }
+}
+
 int cd(char const *dir) {
     int check;
     if (dir == NULL) {

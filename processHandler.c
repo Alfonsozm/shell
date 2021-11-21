@@ -1,6 +1,6 @@
 #include "processHandler.h"
 
-processHandler_t *createEmptyProcessHandler() {
+processHandler_t *createNewProcessHandler_T() {
     processHandler_t *processHandler = (processHandler_t *) malloc(sizeof(processHandler_t));
     processHandler->foreground = NULL;
     processHandler->totalBackgroundProcessesAdded = 0;
@@ -8,7 +8,7 @@ processHandler_t *createEmptyProcessHandler() {
     return processHandler;
 }
 
-process_t *createNewProcess(char *line, int id, int count, pid_t *pid, pid_t *ioHandler, int *hasRedirection) {
+process_t *createNewProcess_T(char *line, int id, int count, pid_t *pid, pid_t *ioHandler, int *hasRedirection) {
     process_t *p = (process_t *) malloc(sizeof(process_t));
     p->line = line;
     p->jobId = id;
@@ -43,7 +43,7 @@ void checkProcessStatus(process_t *p) {
     }
 }
 
-void cleanProcess(process_t *process) {
+void cleanProcess_T(process_t *process) {
     free(process->line);
     free(process->pid);
     free(process->pidStatus);
@@ -51,11 +51,11 @@ void cleanProcess(process_t *process) {
     free(process);
 }
 
-void cleanProcessHandler(processHandler_t *processHandler) {
+void cleanProcessHandler_T(processHandler_t *processHandler) {
     node_t *n = processHandler->background->first;
     while (n != NULL) {
         free(n->previous);
-        cleanProcess((process_t *) n->info);
+        cleanProcess_T((process_t *) n->info);
         n = n->next;
     }
     free(processHandler->background);
@@ -73,7 +73,7 @@ process_t *getForeground(processHandler_t const *processHandler) {
 
 void removeForeground(processHandler_t *processHandler) {
     if (processHandler->foreground != NULL) {
-        cleanProcess(processHandler->foreground);
+        cleanProcess_T(processHandler->foreground);
         processHandler->foreground = NULL;
     }
 }

@@ -9,6 +9,8 @@
 
 #include "processHandler.h"
 
+void shellCommand(processHandler_t *processHandler, tcommand *command, char* cwd);
+
 int cd(char const *dir);
 
 void jobs(processHandler_t const *processHandler);

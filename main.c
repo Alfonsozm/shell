@@ -12,7 +12,7 @@
 
 processHandler_t *processHandler;
 
-pid_t createNewProcessLine(tcommand command, int inputStream, int outputStream, int errorStream, pid_t groupPid);
+pid_t createNewForkedProcess(tcommand command, int inputStream, int outputStream, int errorStream, pid_t groupPid);
 
 void sigtstpHandler(int sig);
 
@@ -30,7 +30,7 @@ int main(void) {
     signal(SIGTTIN, SIG_IGN);
     char *cwd = (char *) malloc(sizeof(char) * 1024);
     char *buf = (char *) malloc(sizeof(char) * 1024);
-    processHandler = createEmptyProcessHandler();
+    processHandler = createNewProcessHandler_T();
     getcwd(cwd, 1024);
     printf("msh (%s) > ", cwd);
     while (fgets(buf, 1024, stdin)) {
@@ -80,57 +80,7 @@ int main(void) {
         if (line->ncommands == 1) {
             if (line->commands[0].filename == NULL) {
                 check = 1;
-                if (!strcmp(line->commands[0].argv[0], "exit")) {
-                    if (line->commands[0].argc == 1) {
-                        node_t *n = getBackground(processHandler)->first;
-                        while (n != NULL) {
-                            process_t const *p = (process_t *) n->info;
-                            if (p->groupStatus != ENDED) {
-                                killpg(p->groupPid, SIGTERM);
-                            }
-                            n = n->next;
-                        }
-                        cleanProcessHandler(processHandler);
-                        exit(0);
-                    } else {
-                        fprintf(stderr, "Incorrect number of arguments for command \"exit\"\n");
-                    }
-                } else if (!strcmp(line->commands[0].argv[0], "cd")) {
-                    if (line->commands[0].argc <= 2) {
-                        cd(line->commands[0].argv[1]);
-                        getcwd(cwd, 1024);
-                    } else {
-                        fprintf(stderr, "Incorrect number of arguments for command \"cd\"\n");
-                    }
-                } else if (!strcmp(line->commands[0].argv[0], "fg") ||
-                           !strcmp(line->commands[0].argv[0], "foreground")) {
-                    if (line->commands[0].argc == 1) {
-                        foreground(processHandler, 0);
-                    } else if (line->commands[0].argc == 2) {
-                        foreground(processHandler, (int) strtol(line->commands[0].argv[1], NULL, 10));
-                    } else {
-                        fprintf(stderr, "Incorrect number of arguments for command \"%s\"\n",
-                                line->commands[0].argv[0]);
-                    }
-                } else if (!strcmp(line->commands[0].argv[0], "bg") ||
-                           !strcmp(line->commands[0].argv[0], "background")) {
-                    if (line->commands[0].argc == 1) {
-                        background(processHandler, 0);
-                    } else if (line->commands[0].argc == 2) {
-                        background(processHandler, (int) strtol(line->commands[0].argv[1], NULL, 10));
-                    } else {
-                        fprintf(stderr, "Incorrect number of arguments for command \"%s\"\n",
-                                line->commands[0].argv[0]);
-                    }
-                } else if (!strcmp(line->commands[0].argv[0], "jobs")) {
-                    if (line->commands[0].argc == 1) {
-                        jobs(processHandler);
-                    } else {
-                        fprintf(stderr, "Incorrect number of arguments for command \"jobs\"\n");
-                    }
-                } else {
-                    fprintf(stderr, "Command \"%s\" does not exist\n", line->commands[0].argv[0]);
-                }
+                shellCommand(processHandler, &(line->commands[0]), cwd);
             } else if (line->background) {
                 for (int i = 0; i < 3; ++i) {
                     while (pipe(ioPipe[i]) == -1);
@@ -142,9 +92,13 @@ int main(void) {
                 }
                 ioHandler[1] = createNewIOHandler(ioPipe[1][0], outputStream == -2 ? devNULL : outputStream, OUT);
                 ioHandler[2] = createNewIOHandler(ioPipe[2][0], errorStream == -2 ? devNULL : errorStream, ERR);
-                pid[0] = createNewProcessLine(line->commands[0], ioPipe[0][0], ioPipe[1][1], ioPipe[2][1], 0);
+                pid[0] = createNewForkedProcess(line->commands[0], ioPipe[0][0], ioPipe[1][1], ioPipe[2][1], 0);
                 for (int i = 0; i < 3; ++i) {
                     while (setpgid(ioHandler[i], pid[0]) == -1);
+                }
+                for (int i = 0; i < 3; ++i) {
+                    close(ioPipe[i][0]);
+                    close(ioPipe[i][1]);
                 }
             } else {
                 for (int i = 0; i < 3; ++i) {
@@ -153,9 +107,13 @@ int main(void) {
                 ioHandler[0] = createNewIOHandler(inputStream == -2 ? STDIN_FILENO : inputStream, ioPipe[0][1], IN);
                 ioHandler[1] = createNewIOHandler(ioPipe[1][0], outputStream == -2 ? STDOUT_FILENO : outputStream, OUT);
                 ioHandler[2] = createNewIOHandler(ioPipe[2][0], errorStream == -2 ? STDERR_FILENO : errorStream, ERR);
-                pid[0] = createNewProcessLine(line->commands[0], ioPipe[0][0], ioPipe[1][1], ioPipe[2][1], 0);
+                pid[0] = createNewForkedProcess(line->commands[0], ioPipe[0][0], ioPipe[1][1], ioPipe[2][1], 0);
                 for (int i = 0; i < 3; ++i) {
                     while (setpgid(ioHandler[i], pid[0]) == -1);
+                }
+                for (int i = 0; i < 3; ++i) {
+                    close(ioPipe[i][0]);
+                    close(ioPipe[i][1]);
                 }
             }
         } else {
@@ -179,19 +137,23 @@ int main(void) {
                     ioHandler[1] = createNewIOHandler(ioPipe[1][0], outputStream == -2 ? devNULL : outputStream, OUT);
                     ioHandler[2] = createNewIOHandler(ioPipe[2][0], errorStream == -2 ? devNULL : errorStream, ERR);
                     while (pipe(pipeline) == -1);
-                    pid[0] = createNewProcessLine(line->commands[0], ioPipe[0][0], pipeline[1], ioPipe[2][1], 0);
+                    pid[0] = createNewForkedProcess(line->commands[0], ioPipe[0][0], pipeline[1], ioPipe[2][1], 0);
                     close(pipeline[1]);
                     int aux;
                     for (int i = 1; i < line->ncommands - 1; ++i) {
                         aux = pipeline[0];
                         while (pipe(pipeline) == -1);
-                        pid[i] = createNewProcessLine(line->commands[i], aux, pipeline[1], ioPipe[2][1], pid[0]);
+                        pid[i] = createNewForkedProcess(line->commands[i], aux, pipeline[1], ioPipe[2][1], pid[0]);
                         close(aux);
                         close(pipeline[1]);
                     }
-                    pid[line->ncommands - 1] = createNewProcessLine(line->commands[line->ncommands - 1], pipeline[0],
-                                                                    ioPipe[1][1], ioPipe[2][1], pid[0]);
+                    pid[line->ncommands - 1] = createNewForkedProcess(line->commands[line->ncommands - 1], pipeline[0],
+                                                                      ioPipe[1][1], ioPipe[2][1], pid[0]);
                     close(pipeline[0]);
+                    for (int i = 0; i < 3; ++i) {
+                        close(ioPipe[i][0]);
+                        close(ioPipe[i][1]);
+                    }
                 } else {
                     ioHandler[0] = createNewIOHandler(inputStream == -2 ? STDIN_FILENO : inputStream, ioPipe[0][1], IN);
                     ioHandler[1] = createNewIOHandler(ioPipe[1][0], outputStream == -2 ? STDOUT_FILENO : outputStream,
@@ -199,21 +161,24 @@ int main(void) {
                     ioHandler[2] = createNewIOHandler(ioPipe[2][0], errorStream == -2 ? STDERR_FILENO : errorStream,
                                                       ERR);
                     while (pipe(pipeline) == -1);
-                    pid[0] = createNewProcessLine(line->commands[0], ioPipe[0][0], pipeline[1], ioPipe[2][1], 0);
+                    pid[0] = createNewForkedProcess(line->commands[0], ioPipe[0][0], pipeline[1], ioPipe[2][1], 0);
                     close(pipeline[1]);
                     int aux;
                     for (int i = 1; i < line->ncommands - 1; ++i) {
                         aux = pipeline[0];
                         while (pipe(pipeline) == -1);
-                        pid[i] = createNewProcessLine(line->commands[i], aux, pipeline[1],
-                                                      ioPipe[2][1], pid[0]);
+                        pid[i] = createNewForkedProcess(line->commands[i], aux, pipeline[1], ioPipe[2][1], pid[0]);
                         close(aux);
                         close(pipeline[1]);
                     }
-                    pid[line->ncommands - 1] = createNewProcessLine(line->commands[line->ncommands - 1], pipeline[0],
-                                                                    ioPipe[1][1],
-                                                                    ioPipe[2][1], pid[0]);
+                    pid[line->ncommands - 1] = createNewForkedProcess(line->commands[line->ncommands - 1], pipeline[0],
+                                                                      ioPipe[1][1],
+                                                                      ioPipe[2][1], pid[0]);
                     close(pipeline[0]);
+                    for (int i = 0; i < 3; ++i) {
+                        close(ioPipe[i][0]);
+                        close(ioPipe[i][1]);
+                    }
                 }
                 for (int i = 0; i < 3; ++i) {
                     while (setpgid(ioHandler[i], pid[0]) == -1);
@@ -221,7 +186,7 @@ int main(void) {
             }
         }
         if (!check) {
-            process_t *process = createNewProcess(buf, -1, line->ncommands, pid, ioHandler, hasRedirection);
+            process_t *process = createNewProcess_T(buf, -1, line->ncommands, pid, ioHandler, hasRedirection);
             if (line->background) {
                 addBackground(processHandler, process);
             } else {
@@ -251,13 +216,13 @@ int main(void) {
         fflush(stdout);
         printf("msh (%s) > ", cwd);
     }
-    cleanProcessHandler(processHandler);
+    cleanProcessHandler_T(processHandler);
     free(buf);
     free(cwd);
     return 0;
 }
 
-pid_t createNewProcessLine(tcommand command, int inputStream, int outputStream, int errorStream, pid_t groupPid) {
+pid_t createNewForkedProcess(tcommand command, int inputStream, int outputStream, int errorStream, pid_t groupPid) {
     pid_t pid = fork();
     if (pid < 0) {
         fprintf(stderr, "Error while forking\n");
@@ -308,6 +273,6 @@ void sigtermHandler(int sig) {
         }
         n = n->next;
     }
-    cleanProcessHandler(processHandler);
+    cleanProcessHandler_T(processHandler);
     exit(0);
 }

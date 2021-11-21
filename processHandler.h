@@ -7,6 +7,7 @@
 #include <sys/wait.h>
 
 #include "list.h"
+#include "parser.h"
 
 typedef enum {
     RUNNING,
@@ -32,17 +33,17 @@ typedef struct processHandler_t {
     struct process_t *foreground;
 } processHandler_t;
 
-processHandler_t *createEmptyProcessHandler();
+processHandler_t *createNewProcessHandler_T();
 
-process_t *createNewProcess(char *line, int id, int count, pid_t *pid, pid_t *ioHandler, int *hasRedirection);
+process_t *createNewProcess_T(char *line, int id, int count, pid_t *pid, pid_t *ioHandler, int *hasRedirection);
 
 void checkProcessStatus(process_t *p);
 
 //frees all the memory associated with the specified process_t
-void cleanProcess(process_t *process);
+void cleanProcess_T(process_t *process);
 
 //frees all the memory associated with the specified processHandler_t
-void cleanProcessHandler(processHandler_t *processHandler);
+void cleanProcessHandler_T(processHandler_t *processHandler);
 
 void addForeground(processHandler_t *processHandler, process_t *process);
 
