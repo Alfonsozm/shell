@@ -31,14 +31,11 @@ pid_t createNewIOHandler(int pipeIn, int pipeOut, io_t io) {
             }
         }
     }
-    fprintf(stderr, "IOHandler %d %d\n", io, pid);
     return pid;
 }
 
-pid_t createNewIOHandlerOFF(int pipeIn, int pipeOut, io_t io) {
-    if (ioType != IN) {
-        return -1;
-    }
+pid_t createNewIOHandlerOFF(int pipeIn, int pipeOut) {
+    io_t io = IN;
     pid_t pid = fork();
     if (pid < 0) {
         fprintf(stderr, "Error while forking\n");
@@ -62,11 +59,10 @@ pid_t createNewIOHandlerOFF(int pipeIn, int pipeOut, io_t io) {
             }
         }
     }
-    fprintf(stderr, "IOHandler %d %d\n", io, pid);
     return pid;
 }
 
-void sigusr1Handler(int sig) {
+static void sigusr1Handler(int sig) {
     switch (ioType) {
         case IN:
             status = ON;
@@ -82,7 +78,7 @@ void sigusr1Handler(int sig) {
     }
 }
 
-void sigusr2Handler(int sig) {
+static void sigusr2Handler(int sig) {
     switch (ioType) {
         case IN:
             status = OFF;

@@ -40,15 +40,3 @@ void addInfo(list_t *list, void *info) {
 int getCount(list_t const *list) {
     return list->count;
 }
-
-void *getByIndex(list_t const *list, int index) {
-    if (index >= list->count) {
-        return NULL;
-    } else {
-        node_t *n = list->first;
-        for (int i = 1; i < index; ++i) {
-            n = n->next;
-        }
-        return n;
-    }
-}

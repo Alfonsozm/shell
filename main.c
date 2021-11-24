@@ -86,7 +86,7 @@ int main(void) {
                     while (pipe(ioPipe[i]) == -1);
                 }
                 if (inputStream == -2) {
-                    ioHandler[0] = createNewIOHandlerOFF(STDIN_FILENO, ioPipe[0][1], IN);
+                    ioHandler[0] = createNewIOHandlerOFF(STDIN_FILENO, ioPipe[0][1]);
                 } else {
                     ioHandler[0] = createNewIOHandler(inputStream, ioPipe[0][1], IN);
                 }
@@ -130,7 +130,7 @@ int main(void) {
                 }
                 if (line->background) {
                     if (inputStream == -2) {
-                        ioHandler[0] = createNewIOHandlerOFF(STDIN_FILENO, ioPipe[0][1], IN);
+                        ioHandler[0] = createNewIOHandlerOFF(STDIN_FILENO, ioPipe[0][1]);
                     } else {
                         ioHandler[0] = createNewIOHandler(inputStream, ioPipe[0][1], IN);
                     }
@@ -188,9 +188,9 @@ int main(void) {
         if (!check) {
             process_t *process = createNewProcess_T(buf, -1, line->ncommands, pid, ioHandler, hasRedirection);
             if (line->background) {
-                addBackground(processHandler, process);
+                printf("Background job created with job id: %d", addBackground(processHandler, process));
             } else {
-                addForeground(processHandler, process);
+                setForeground(processHandler, process);
                 while (process->groupStatus == RUNNING) {
                     checkProcessStatus(process);
                 }

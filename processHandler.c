@@ -63,7 +63,7 @@ void cleanProcessHandler_T(processHandler_t *processHandler) {
     free(processHandler);
 }
 
-void addForeground(processHandler_t *processHandler, process_t *process) {
+void setForeground(processHandler_t *processHandler, process_t *process) {
     processHandler->foreground = process;
 }
 
@@ -121,16 +121,4 @@ process_t *removeBackground(processHandler_t *processHandler, int jobId) {
 
 list_t *getBackground(processHandler_t const *processHandler) {
     return processHandler->background;
-}
-
-process_t *getBackgroundByJobId(processHandler_t const *processHandler, int jobId) {
-    process_t *p = NULL;
-    node_t *n = processHandler->background->first;
-    while (n != NULL && p == NULL) {
-        if (((process_t *) n->info)->jobId == jobId) {
-            p = (process_t *) n->info;
-        }
-        n = n->next;
-    }
-    return p;
 }

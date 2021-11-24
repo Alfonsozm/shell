@@ -85,7 +85,7 @@ void jobs(processHandler_t const *processHandler) {
         } else {
             c = "Ended";
         }
-        fprintf(stdout, "[%d] \t%7s \t%s\n", p->jobId, c, p->line);
+        fprintf(stdout, "[%d] \t%7s \t%s", p->jobId, c, p->line);
         n = n->next;
     }
 }
@@ -114,7 +114,7 @@ void foreground(processHandler_t *processHandler, int jobId) {
             }
         }
         p->groupStatus = RUNNING;
-        addForeground(processHandler, p);
+        setForeground(processHandler, p);
         while (p->groupStatus == RUNNING) {
             checkProcessStatus(p);
         }
