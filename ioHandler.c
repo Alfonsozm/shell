@@ -24,25 +24,25 @@ pid_t createNewIOHandler(int pipeIn, int pipeOut, io_t io) {
         dup2(pipeIn, STDIN_FILENO);
         dup2(pipeOut, STDOUT_FILENO);
         char *buffer = (char *) malloc(sizeof(char) * 1024);
-        while (1) {
+        while (!feof(stdin)) {
             if (status == ON) {
                 fgets(buffer, 1024, stdin);
                 fputs(buffer, stdout);
             }
         }
+        exit(0);
     }
     return pid;
 }
 
 pid_t createNewIOHandlerOFF(int pipeIn, int pipeOut) {
-    io_t io = IN;
     pid_t pid = fork();
     if (pid < 0) {
         fprintf(stderr, "Error while forking\n");
         exit(1);
     } else if (pid == 0) {
         status = OFF;
-        ioType = io;
+        ioType = IN;
         signal(SIGINT, SIG_DFL);
         signal(SIGQUIT, SIG_DFL);
         signal(SIGTSTP, SIG_DFL);
@@ -52,12 +52,13 @@ pid_t createNewIOHandlerOFF(int pipeIn, int pipeOut) {
         dup2(pipeIn, STDIN_FILENO);
         dup2(pipeOut, STDOUT_FILENO);
         char *buffer = (char *) malloc(sizeof(char) * 1024);
-        while (1) {
+        while (!feof(stdin)) {
             if (status == ON) {
                 fgets(buffer, 1024, stdin);
                 fputs(buffer, stdout);
             }
         }
+        exit(0);
     }
     return pid;
 }

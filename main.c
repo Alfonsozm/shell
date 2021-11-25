@@ -90,31 +90,35 @@ int main(void) {
                 } else {
                     ioHandler[0] = createNewIOHandler(inputStream, ioPipe[0][1], IN);
                 }
+                close(ioPipe[0][1]);
                 ioHandler[1] = createNewIOHandler(ioPipe[1][0], outputStream == -2 ? devNULL : outputStream, OUT);
+                close(ioPipe[1][0]);
                 ioHandler[2] = createNewIOHandler(ioPipe[2][0], errorStream == -2 ? devNULL : errorStream, ERR);
+                close(ioPipe[2][0]);
                 pid[0] = createNewForkedProcess(line->commands[0], ioPipe[0][0], ioPipe[1][1], ioPipe[2][1], 0);
                 for (int i = 0; i < 3; ++i) {
                     while (setpgid(ioHandler[i], pid[0]) == -1);
                 }
-                for (int i = 0; i < 3; ++i) {
-                    close(ioPipe[i][0]);
-                    close(ioPipe[i][1]);
-                }
+                close(ioPipe[0][0]);
+                close(ioPipe[1][1]);
+                close(ioPipe[2][1]);
             } else {
                 for (int i = 0; i < 3; ++i) {
                     while (pipe(ioPipe[i]) == -1);
                 }
                 ioHandler[0] = createNewIOHandler(inputStream == -2 ? STDIN_FILENO : inputStream, ioPipe[0][1], IN);
+                close(ioPipe[0][1]);
                 ioHandler[1] = createNewIOHandler(ioPipe[1][0], outputStream == -2 ? STDOUT_FILENO : outputStream, OUT);
+                close(ioPipe[1][0]);
                 ioHandler[2] = createNewIOHandler(ioPipe[2][0], errorStream == -2 ? STDERR_FILENO : errorStream, ERR);
+                close(ioPipe[2][0]);
                 pid[0] = createNewForkedProcess(line->commands[0], ioPipe[0][0], ioPipe[1][1], ioPipe[2][1], 0);
                 for (int i = 0; i < 3; ++i) {
                     while (setpgid(ioHandler[i], pid[0]) == -1);
                 }
-                for (int i = 0; i < 3; ++i) {
-                    close(ioPipe[i][0]);
-                    close(ioPipe[i][1]);
-                }
+                close(ioPipe[0][0]);
+                close(ioPipe[1][1]);
+                close(ioPipe[2][1]);
             }
         } else {
             for (int i = 0; i < line->ncommands; ++i) {
@@ -134,8 +138,11 @@ int main(void) {
                     } else {
                         ioHandler[0] = createNewIOHandler(inputStream, ioPipe[0][1], IN);
                     }
+                    close(ioPipe[0][1]);
                     ioHandler[1] = createNewIOHandler(ioPipe[1][0], outputStream == -2 ? devNULL : outputStream, OUT);
+                    close(ioPipe[1][0]);
                     ioHandler[2] = createNewIOHandler(ioPipe[2][0], errorStream == -2 ? devNULL : errorStream, ERR);
+                    close(ioPipe[2][0]);
                     while (pipe(pipeline) == -1);
                     pid[0] = createNewForkedProcess(line->commands[0], ioPipe[0][0], pipeline[1], ioPipe[2][1], 0);
                     close(pipeline[1]);
@@ -150,16 +157,18 @@ int main(void) {
                     pid[line->ncommands - 1] = createNewForkedProcess(line->commands[line->ncommands - 1], pipeline[0],
                                                                       ioPipe[1][1], ioPipe[2][1], pid[0]);
                     close(pipeline[0]);
-                    for (int i = 0; i < 3; ++i) {
-                        close(ioPipe[i][0]);
-                        close(ioPipe[i][1]);
-                    }
+                    close(ioPipe[0][0]);
+                    close(ioPipe[1][1]);
+                    close(ioPipe[2][1]);
                 } else {
                     ioHandler[0] = createNewIOHandler(inputStream == -2 ? STDIN_FILENO : inputStream, ioPipe[0][1], IN);
+                    close(ioPipe[0][1]);
                     ioHandler[1] = createNewIOHandler(ioPipe[1][0], outputStream == -2 ? STDOUT_FILENO : outputStream,
                                                       OUT);
+                    close(ioPipe[1][0]);
                     ioHandler[2] = createNewIOHandler(ioPipe[2][0], errorStream == -2 ? STDERR_FILENO : errorStream,
                                                       ERR);
+                    close(ioPipe[2][0]);
                     while (pipe(pipeline) == -1);
                     pid[0] = createNewForkedProcess(line->commands[0], ioPipe[0][0], pipeline[1], ioPipe[2][1], 0);
                     close(pipeline[1]);
@@ -175,10 +184,9 @@ int main(void) {
                                                                       ioPipe[1][1],
                                                                       ioPipe[2][1], pid[0]);
                     close(pipeline[0]);
-                    for (int i = 0; i < 3; ++i) {
-                        close(ioPipe[i][0]);
-                        close(ioPipe[i][1]);
-                    }
+                    close(ioPipe[0][0]);
+                    close(ioPipe[1][1]);
+                    close(ioPipe[2][1]);
                 }
                 for (int i = 0; i < 3; ++i) {
                     while (setpgid(ioHandler[i], pid[0]) == -1);
@@ -188,7 +196,7 @@ int main(void) {
         if (!check) {
             process_t *process = createNewProcess_T(buf, -1, line->ncommands, pid, ioHandler, hasRedirection);
             if (line->background) {
-                printf("Background job created with job id: %d", addBackground(processHandler, process));
+                printf("Background job created with job id: %d\n", addBackground(processHandler, process));
             } else {
                 setForeground(processHandler, process);
                 while (process->groupStatus == RUNNING) {
