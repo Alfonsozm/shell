@@ -30,6 +30,7 @@ pid_t createNewIOHandler(int pipeIn, int pipeOut, io_t io) {
                 fputs(buffer, stdout);
             }
         }
+        free(buffer);
         exit(0);
     }
     return pid;
@@ -58,6 +59,7 @@ pid_t createNewIOHandlerOFF(int pipeIn, int pipeOut) {
                 fputs(buffer, stdout);
             }
         }
+        free(buffer);
         exit(0);
     }
     return pid;
