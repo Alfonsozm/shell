@@ -48,6 +48,7 @@ void cleanProcess_T(process_t *process) {
     free(process->pid);
     free(process->pidStatus);
     free(process->ioHandlers);
+    free(process->hasRedirection);
     free(process);
 }
 
