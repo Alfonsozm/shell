@@ -8,6 +8,9 @@ void shellCommand(processHandler_t *processHandler, tcommand *command, char* cwd
                 process_t const *p = (process_t *) n->info;
                 if (p->groupStatus != ENDED) {
                     killpg(p->groupPid, SIGTERM);
+                    for (int i = 0; i < 3; ++i) {
+                        waitpid(p->ioHandlers[i],NULL, 0);
+                    }
                 }
                 n = n->next;
             }

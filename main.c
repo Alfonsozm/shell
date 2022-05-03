@@ -205,6 +205,9 @@ int main(void) {
                 if (process->groupStatus == ENDED) {
                     sleep(1);
                     killpg(process->groupPid, SIGTERM);
+                    for (int i = 0; i < 3; ++i) {
+                        waitpid(process->ioHandlers[i],NULL, 0);
+                    }
                 }
                 removeForeground(processHandler);
             }
